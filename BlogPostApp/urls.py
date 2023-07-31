@@ -17,7 +17,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-
+ 
 urlpatterns = [
     path("profile/", ProfileView.as_view()),
     path("loginuser/", LoginView.as_view()),

@@ -1,4 +1,3 @@
-from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import generics, status
@@ -19,6 +18,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.views import APIView
 
+
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 from django.contrib.auth import get_user_model
 from rest_framework.generics import CreateAPIView
@@ -45,15 +47,14 @@ class BlogPostDetail(generics.RetrieveUpdateDestroyAPIView):
         if instance.author == self.request.user:
             self.perform_destroy(instance)
             print(instance)
+        elif self.request.user.is_superuser == True:
+            self.perform_destroy(instance)
+            return Response({"message": "Blog deleted successfully by admin ."})
         else:
-            if self.request.user.is_superuser == True:
-                self.perform_destroy(instance)
-                return Response({"message": "Blog deleted succesfully by admin ."})
-            else:
-                return Response(
-                    {"message": "You cannot delete Blog created by another User"}
-                )
-        return Response({"message": "Blog deleted succesfully."})
+            return Response(
+                {"message": "You cannot delete Blog created by another User"}
+            )
+        return Response({"message": "Blog deleted successfully."})
 
 
 class CommentList(generics.ListCreateAPIView):
@@ -122,16 +123,28 @@ class RegisterView(CreateAPIView):
                 )
 
         user = serializer.save()
-        if request.data.get("is_staff", False):
-            subject = "Welcome to our Blog Platform (Admin User)"
-            message = f"Hello {user.username},\n\nThank you for registering as an Admin on our Blog Platform."
-        else:
-            subject = "Welcome to our Blog Platform"
-            message = f"Hello {user.username},\n\nThank you for registering on our Blog Platform."
 
-        from_email = settings.EMAIL_HOST_USER
-        to_email = [user.email]
-        send_mail(subject, message, from_email, to_email)
+        context = {
+            'username': user.username,
+            'is_staff': request.data.get("is_staff", False),
+        }
+
+        subject = "Welcome to our Blog Platform"
+        if context['is_staff']:
+            subject += " (Admin User)"
+
+        # Render the HTML email template with the dynamic data
+        html_message = render_to_string('BlogPostApp/welcome_email.html', context)
+
+        # Send the email
+        send_mail(
+            subject,
+            strip_tags(html_message),  
+            settings.EMAIL_HOST_USER,  
+            [user.email],
+            html_message=html_message,
+        )
+
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
