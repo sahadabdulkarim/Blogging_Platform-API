@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Blog Post Created</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            text-align: center;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h2 {
+            color: #007BFF;
+            font-size: 28px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .attachment-link {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h2>Hello {{ username }},</h2>
+    <p>Your new blog post "{{ title }}" has been successfully created!</p>
+    <p>{{ content }}</p>
+</body>
+</html>

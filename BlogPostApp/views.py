@@ -18,22 +18,49 @@ from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.views import APIView
 
-
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 from django.contrib.auth import get_user_model
 from rest_framework.generics import CreateAPIView
+from django.core.mail import EmailMultiAlternatives
+User = get_user_model()
 
 
-class BlogPostList(generics.ListCreateAPIView):
+class BlogPostList(generics.CreateAPIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    authentication_classes = (JWTAuthentication,)
     queryset = BlogPost.objects.all()
     serializer_class = BlogPostSerializer
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        blog_post = serializer.save(author=self.request.user)
+
+        subject = 'New Blog Post Created'
+        from_email = settings.EMAIL_HOST_USER
+        to_email = [self.request.user.email]
+        context = {
+            'username': self.request.user.username,
+            'title': blog_post.title,
+            'content': blog_post.content,
+            
+        }
+
+        html_content = render_to_string('BlogPostApp/email_notification.html', context)
+        text_content = strip_tags(html_content)
+
+        email = EmailMultiAlternatives(subject, text_content, from_email, to_email)
+
+        if blog_post.blog_image:
+            email.attach(blog_post.blog_image.name, blog_post.blog_image.file.read())
+
+        if blog_post.attached_file:
+            email.attach(blog_post.attached_file.name, blog_post.attached_file.file.read())
+
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class BlogPostDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -91,7 +118,6 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
                 )
 
 
-User = get_user_model()
 
 
 class RegisterView(CreateAPIView):

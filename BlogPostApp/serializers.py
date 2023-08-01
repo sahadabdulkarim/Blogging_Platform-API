@@ -17,22 +17,20 @@ class BlogPostSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source="author.username")
     comment = SerializerMethodField(read_only=True)
 
+    
     def get_comment(self, obj):
         try:
-            if obj:
-                owner_item = []
-                answer_obj = Comment.objects.filter(post=obj.id)
-                for items in answer_obj:
-                    owner_item.append(
-                        {
-                            "id": items.id,
-                            "comments": items.content,
-                            "author": items.author.username,
-                        }
-                    )
-                return owner_item
-            else:
+            if not obj:
                 return None
+            answer_obj = Comment.objects.filter(post=obj.id)
+            return [
+                {
+                    "id": items.id,
+                    "comments": items.content,
+                    "author": items.author.username,
+                }
+                for items in answer_obj
+            ]
         except Exception as exception:
             logger.exception(
                 "Getting Exception while Fetching choices  as %s", exception
@@ -49,7 +47,9 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "blog_image",
+            "attached_file",
             "comment",
+           
         ]
 
 
@@ -97,14 +97,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         elif User.objects.filter(username=username).exists():
             raise serializers.ValidationError("Username already taken")
         else:
-            # If is_staff is not provided in the request data, set it to False (for regular users)
-            is_staff = validated_data.pop("is_staff", False)
+            return self._extracted_from_create_13(validated_data)
 
-            user = User.objects.create(**validated_data)
-            user.set_password(validated_data["password"])
-            user.is_staff = is_staff  # Set the is_staff attribute
-            user.save()
-            return user
+    # TODO Rename this here and in `create`
+    def _extracted_from_create_13(self, validated_data):
+        # If is_staff is not provided in the request data, set it to False (for regular users)
+        is_staff = validated_data.pop("is_staff", False)
+
+        user = User.objects.create(**validated_data)
+        user.set_password(validated_data["password"])
+        user.is_staff = is_staff  # Set the is_staff attribute
+        user.save()
+        return user
 
 
 class LoginSerializer(serializers.Serializer):

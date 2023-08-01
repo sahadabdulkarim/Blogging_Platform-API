@@ -10,6 +10,7 @@ class BlogPost(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     blog_image = models.ImageField(upload_to="blogimage/", blank=True)
+    attached_file = models.FileField(upload_to='blog_attachments/', blank=True, null=True)
 
     def __str__(self):
         return self.title
